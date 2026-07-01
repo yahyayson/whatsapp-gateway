@@ -13,7 +13,6 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
 // 2. HAƊAWA DA MONGODB
-// Lokacin da za ka tafi live akan Render, za ka canza wannan URL ɗin zuwa na MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/whatsapp_gateway')
   .then(() => console.log('Masha Allah, MongoDB ya haɗu lafiya!'))
   .catch(err => console.error('Kuskure wajen haɗawa da MongoDB:', err));
@@ -26,9 +25,9 @@ const NumberSchema = new mongoose.Schema({
 });
 const WhatsAppNumber = mongoose.model('WhatsAppNumber', NumberSchema);
 
-// 3. NUNA SHAFIN FRONTEND (INDEX.HTML)
+// 3. NUNA SHAFIN FRONTEND (INDEX.HTML TARE DA BUBBAN 'I')
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'Index.html'));
 });
 
 let sessions = {}; 
@@ -61,7 +60,6 @@ app.post('/api/connect', async (req, res) => {
             if (connection === 'open') {
                 console.log(`Lamba ${cleanNumber} ta haɗu dakat!`);
                 
-                // Jefa lambar kai tsaye cikin MongoDB kamar yadda kake so
                 await WhatsAppNumber.findOneAndUpdate(
                     { phoneNumber: cleanNumber },
                     { status: 'Active', connectedAt: new Date() },
@@ -74,11 +72,7 @@ app.post('/api/connect', async (req, res) => {
             setTimeout(async () => {
                 try {
                     let code = await sock.requestPairingCode(cleanNumber);
-                    
-                    // Cire kowane irin haruffa idan da rago, mu bar zallan lambobi 8 kacal
                     let cleanCode = code?.replace(/[^0-9]/g, '') || code;
-
-                    // DABARA: Raba lambar guda 8 ta zama hudu na farko da hudu na karshe (misali: 1234 - 5678)
                     let formattedCode = cleanCode.substring(0, 4) + " - " + cleanCode.substring(4, 8);
 
                     if (!res.headersSent) {
@@ -91,7 +85,6 @@ app.post('/api/connect', async (req, res) => {
                 }
             }, 1500);
         } else {
-            // Idan riga ta haɗu, mu tabbatar tana cikin Database kuma
             await WhatsAppNumber.findOneAndUpdate(
                 { phoneNumber: cleanNumber },
                 { status: 'Active' },
@@ -129,3 +122,4 @@ app.post('/api/send-message', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Inji yana tafi a port ${PORT}`));
+                                      
