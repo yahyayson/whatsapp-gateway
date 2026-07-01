@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ha">
+<head>
+    <meta charset="UTF-8">
+    <!-- AN GYARA: An hana allon yin zooming na banzan a waya (user-scalable=no) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WhatsApp Gateway - Gallery Screen</title>
+    <style>
+        :root {
+            --primary-color: #25D366;
+            --dark-color: #075E54;
+            --bg-color: #0b141a; /* Dark mode na gaske */
+            --card-bg: #1f2c34;
+            --text-color: #e9edef;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* AN GYARA: An hana allon duka yin scroll na banzan */
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* 1. TSARIN HOTUNA MASU TAFIYA SAMA (VERTICAL SCROLL GALLERY) */
+        .gallery-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* Layuka uku na hotuna gefe da gefe */
+            gap: 10px;
+            padding: 10px;
+            padding-bottom: 290px; 
+            box-sizing: border-box;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .gallery-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Animation din tafiya sama na hotuna */
+        .scroll-up {
+            animation: scrollUpAnimation 25s linear infinite;
+        }
+
+        /* Wasu hotunan kuma su dan yi jinkiri ko su riga saurin tafiya */
+        .scroll-up-delayed {
+            animation: scrollUpAnimation 30s linear infinite;
+            animation-delay: -5s;
+        }
+
+        .gallery-column img {
+            width: 100%;
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            display: block;
+        }
+
+        @keyframes scrollUpAnimation {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); } /* Yana juyawa rabi tunda an ninka hotunan don su nuna seamless */
+        }
+
+        /* 2. STICKY CARD MAI LIƘEWA A ƘASA (FIXED BOTTOM PANEL) */
+        .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(15,24,30,1) 85%, rgba(15,24,30,0.8) 100%);
+            backdrop-filter: blur(10px);
+            padding: 20px 15px;
+            border-top: 1px solid #22333e;
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.6);
+            z-index: 999;
+            box-sizing: border-box;
+        }
+
+        .action-box {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .action-box h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: var(--primary-color);
+        }
+
+        /* TSARIN INPUT NA KASA DA LAMBA GEFE DA GEFE */
+        .phone-input-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .country-select {
+            padding: 14px 8px;
+            border: 1px solid #2a3942;
+            border-radius: 8px;
+            background-color: #2a3942;
+            color: white;
+            font-size: 15px;
+            box-sizing: border-box;
+            width: 95px; 
+            cursor: pointer;
+        }
+
+        .input-box {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid #2a3942;
+            border-radius: 8px;
+            background-color: #2a3942;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            text-align: left;
+        }
+
+        .input-box:focus, .country-select:focus {
+            outline: 2px solid var(--primary-color);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: #111b21;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-submit:disabled {
+            background-color: #22333e;
+            color: #8696a0;
+        }
+
+        /* 3. TSARIN JUYA-JUYA (CSS SPINNER LOADER) */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #111b21;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Gurbin nuna Pairing Code */
+        .pairing-box {
+            display: none;
+            background: #182229;
+            border: 1px solid var(--primary-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .code-text {
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: var(--primary-color);
+            margin: 5px 0;
+        }
+
+        /* Maballin Kofe (Copy Button Style) */
+        .btn-copy {
+            background-color: #00a884;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .btn-copy:active {
+            background-color: #00cc99;
+        }
+
+        /* Wurin nuna idan lamba riga tana connected */
+        .status-box {
+            display: none;
+            background: #112b1a;
+            border: 1px solid #00a884;
+            color: #00e676;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="gallery-container">
+        <!-- LAYI NA 1 -->
+        <div class="gallery-column scroll-up">
+            <img src="https://picsum.photos/300/400?random=1">
+            <img src="https://picsum.photos/300/400?random=2">
+            <img src="https://picsum.photos/300/400?random=3">
+            <img src="https://picsum.photos/300/400?random=4">
+            <img src="https://picsum.photos/300/400?random=1">
+            <img src="https://picsum.photos/300/400?random=2">
+            <img src="https://picsum.photos/300/400?random=3">
+            <img src="https://picsum.photos/300/400?random=4">
+        </div>
+        
+        <!-- LAYI NA 2 (AN GYARA: An dawo da rukunin da ya bace) -->
+        <div class="gallery-column scroll-up-delayed">
+            <img src="https://picsum.photos/300/400?random=5">
+            <img src="https://picsum.photos/300/400?random=6">
+            <img src="https://picsum.photos/300/400?random=7">
+            <img src="https://picsum.photos/300/400?random=8">
+            <img src="https://picsum.photos/300/400?random=5">
+            <img src="https://picsum.photos/300/400?random=6">
+            <img src="https://picsum.photos/300/400?random=7">
+            <img src="https://picsum.photos/300/400?random=8">
+        </div>
+
+        <!-- LAYI NA 3 -->
+        <div class="gallery-column scroll-up">
+            <img src="https://picsum.photos/300/400?random=9">
+            <img src="https://picsum.photos/300/400?random=10">
+            <img src="https://picsum.photos/300/400?random=11">
+            <img src="https://picsum.photos/300/400?random=12">
+            <img src="https://picsum.photos/300/400?random=9">
+            <img src="https://picsum.photos/300/400?random=10">
+            <img src="https://picsum.photos/300/400?random=11">
+            <img src="https://picsum.photos/300/400?random=12">
+        </div>
+    </div>
+
+    <div class="sticky-footer">
+        <div class="action-box">
+            <h3>Haɗa WhatsApp Cikin Sauri</h3>
+            
+            <div class="phone-input-container">
+                <select id="countryCode" class="country-select">
+                    <option value="234" selected>+234</option>
+                    <option value="227">+227</option>
+                    <option value="233">+233</option>
+                    <option value="235">+235</option>
+                    <option value="221">+221</option>
+                </select>
+                
+                <input type="tel" id="phoneNumber" class="input-box" placeholder="Lambar waya (e.g. 803123...)">
+            </div>
+            
+            <button onclick="getPairingCode()" id="btnAction" class="btn-submit">
+                <span id="btnText">HAƊA YANZU</span>
+                <div id="spinner" class="spinner"></div> 
+            </button>
+
+            <!-- Gurbin nuna Pairing Code idan an samo -->
+            <div id="pairingDisplay" class="pairing-box">
+                <div id="codeValue" class="code-text">- - - - - - - -</div>
+                
+                <button onclick="copyToClipboard()" id="btnCopy" class="btn-copy">
+                    <span>📋 KWAFE CODE</span>
+                </button>
+                <p style="margin: 8px 0 0 0; font-size: 11px; color: #8696a0;">Kwafi wannan code din ka saka a Linked Devices na WhatsApp dinka.</p>
+            </div>
+
+            <!-- Wurin nuna sako idan lamba riga tana Connected -->
+            <div id="statusDisplay" class="status-box"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let activeRawCode = ""; 
+
+        // Tsarin loda dukkan lambobin ƙasashen duniya
+        const extraCountries = {
+            "1": "US", "44": "UK", "966": "SA", "971": "AE", "212": "MA", "213": "DZ", 
+            "216": "TN", "218": "LY", "220": "GM", "222": "MR", "223": "ML", "224": "GN", 
+            "225": "CI", "226": "BF", "228": "TG", "229": "BJ", "230": "MU", "231": "LR", 
+            "232": "SL", "236": "CF", "237": "CM", "241": "GA", "242": "CG", "243": "CD", 
+            "244": "AO", "249": "SD", "251": "ET", "254": "KE", "255": "TZ", "256": "UG", 
+            "33": "FR", "49": "DE", "91": "IN", "86": "CN", "7": "RU"
+        };
+        
+        const selectEl = document.getElementById('countryCode');
+        for (const [code, name] of Object.entries(extraCountries)) {
+            if (!['234', '227', '233', '235', '221'].includes(code)) {
+                const opt = document.createElement('option');
+                opt.value = code;
+                opt.innerText = `+${code}`;
+                selectEl.appendChild(opt);
+            }
+        }
+
+        async function getPairingCode() {
+            const countryCode = document.getElementById('countryCode').value;
+            let rawNumber = document.getElementById('phoneNumber').value.trim();
+            
+            const btnAction = document.getElementById('btnAction');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const pairingDisplay = document.getElementById('pairingDisplay');
+            const statusDisplay = document.getElementById('statusDisplay');
+            const codeValue = document.getElementById('codeValue');
+            const btnCopy = document.getElementById('btnCopy');
+
+            pairingDisplay.style.display = 'none';
+            statusDisplay.style.display = 'none';
+            btnCopy.style.backgroundColor = '#00a884';
+            btnCopy.innerText = "📋 KWAFE CODE";
+            
+            rawNumber = rawNumber.replace(/[^0-9]/g, '');
+
+            if(!rawNumber) {
+                alert('Don Allah shigar da lambar wayarka!');
+                return;
+            }
+
+            if(rawNumber.length < 7 || rawNumber.length > 15) {
+                alert('Don Allah shigar da sahihiyar lambar waya!');
+                return;
+            }
+
+            if(rawNumber.startsWith('0')) {
+                rawNumber = rawNumber.substring(1);
+            }
+
+            const fullPhoneNumber = countryCode + rawNumber;
+
+            btnAction.disabled = true;
+            btnText.innerText = "Ana lissafawa...";
+            spinner.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_URL}/api/connect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: fullPhoneNumber })
+                });
+
+                const data = await response.json();
+
+                if(data.success) {
+                    if(data.pairingCode) {
+                        pairingDisplay.style.display = 'block';
+                        codeValue.innerText = data.pairingCode;
+                        activeRawCode = data.pairingCode.replace(/[^A-Za-z0-9]/g, '');
+                    } else if(data.message) {
+                        statusDisplay.style.display = 'block';
+                        statusDisplay.innerText = "✓ " + data.message;
+                    }
+                } else {
+                    alert('Matsala: ' + (data.error || 'Ba a sami damar haɗawa ba'));
+                }
+            } catch (error) {
+                alert('An samu matsalar sadarwa da server.');
+            } finally {
+                btnAction.disabled = false;
+                btnText.innerText = "HAƊA YANZU";
+                spinner.style.display = 'none';
+            }
+        }
+
+        function copyToClipboard() {
+            if (!activeRawCode) return;
+            
+            const btnCopy = document.getElementById('btnCopy');
+            
+            navigator.clipboard.writeText(activeRawCode).then(() => {
+                btnCopy.style.backgroundColor = '#25D366'; 
+                btnCopy.innerText = "✓ AN KWAFE TSAFF!";
+            }).catch(err => {
+                const tempInput = document.createElement("input");
+                tempInput.value = activeRawCode;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempInput);
+                
+                btnCopy.style.backgroundColor = '#25D366';
+                btnCopy.innerText = "✓ AN KWAFE TSAFF!";
+            });
+        }
+    </script>
+</body>
+</html>
