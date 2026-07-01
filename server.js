@@ -1,16 +1,18 @@
+const express = require('express');
 const path = require('path');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const pino = require('pino');
 
-// Wannan layin zai sa Express ta gane fayilolin da ke babban babban folda
+const app = express();
+
+// 1. SAITA MIDDLEWARES
+app.use(cors());
+app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Wannan kuma zai nuna index.html idan an shigo babban link
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-
-
-// 1. HAƊAWA DA MONGODB
+// 2. HAƊAWA DA MONGODB
 // Lokacin da za ka tafi live akan Render, za ka canza wannan URL ɗin zuwa na MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/whatsapp_gateway')
   .then(() => console.log('Masha Allah, MongoDB ya haɗu lafiya!'))
@@ -24,12 +26,14 @@ const NumberSchema = new mongoose.Schema({
 });
 const WhatsAppNumber = mongoose.model('WhatsAppNumber', NumberSchema);
 
+// 3. NUNA SHAFIN FRONTEND (INDEX.HTML)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 let sessions = {}; 
 
+// 4. API CODES FOR WHATSAPP PAIRING
 app.post('/api/connect', async (req, res) => {
     const { phoneNumber } = req.body;
     if (!phoneNumber) return res.status(400).json({ error: 'Saka lambar waya da lambar kasa!' });
@@ -103,6 +107,7 @@ app.post('/api/connect', async (req, res) => {
     }
 });
 
+// 5. API FOR SENDING BULK MESSAGES
 app.post('/api/send-message', async (req, res) => {
     const { senderNumber, receiverNumber, message } = req.body;
     const cleanSender = senderNumber.replace(/[^0-9]/g, '');
