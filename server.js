@@ -1,15 +1,14 @@
-const express = require('express'); 
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
-const pino = require('pino');
-const cors = require('cors');
 const path = require('path');
-const mongoose = require('mongoose'); // AN ƘARA: Don haɗawa da Database
 
-const app = express();
-app.use(express.json());
-app.use(cors());
+// Wannan layin zai sa Express ta gane fayilolin da ke babban babban folda
+app.use(express.static(path.join(__dirname)));
 
-app.use(express.static(__dirname));
+// Wannan kuma zai nuna index.html idan an shigo babban link
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+
 
 // 1. HAƊAWA DA MONGODB
 // Lokacin da za ka tafi live akan Render, za ka canza wannan URL ɗin zuwa na MongoDB Atlas
