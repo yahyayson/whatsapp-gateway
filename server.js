@@ -63,6 +63,7 @@ app.post('/api/connect', async (req, res) => {
         });
 
         if (!sock.authState.creds.registered) {
+            // AN ZAUNA LAFIYA: Sabar za ta jira sakan 10 dakat kafin ta tura code
             setTimeout(async () => {
                 try {
                     let code = await sock.requestPairingCode(cleanNumber);
@@ -71,20 +72,17 @@ app.post('/api/connect', async (req, res) => {
                         return res.status(500).json({ error: 'Sabar WhatsApp ba ta ba da code ba, sake gwada nan kusa.' });
                     }
 
-                    // GYARA: Mun cire tsohon replace ɗin, domin mu bar lambobin da alphabet ɗin kamar yadda WhatsApp ke buƙata 
-                    let cleanCode = code.trim();
+                    // GYARA MAFI ANFANI: Mun bar duka alphabet da lambobin dakat kamar yadda WhatsApp ya turo
+                    let cleanCode = code.trim().toUpperCase().replace(/-/g, '');
 
-                    // Idan akwai baka-gizo (-) a tsakiya tun farko, mu cire shi kafin mu sake tsara shi da kanmu
-                    cleanCode = cleanCode.replace(/-/g, '');
-
-                    // Tabbatar tsawon code ɗin ya kai guda 8 cif gaba ɗaya
+                    // Idan bai cika guda 8 ba, mu dan kara jiran sakan 2 don ya cika cif
                     if (cleanCode.length < 8) {
                         await new Promise(resolve => setTimeout(resolve, 2000));
                         code = await sock.requestPairingCode(cleanNumber);
-                        cleanCode = code.trim().replace(/-/g, '');
+                        cleanCode = code.trim().toUpperCase().replace(/-/g, '');
                     }
 
-                    // Raba code ɗin guda 8 (tare da alphabet da lambobinsa) ya dawo hudu na farko da hudu na karshe
+                    // Tsara shi ya fito hudu na farko da hudu na karshe (Misali: W67X - N2A3)
                     let formattedCode = cleanCode.substring(0, 4) + " - " + cleanCode.substring(4, 8);
 
                     if (!res.headersSent) {
