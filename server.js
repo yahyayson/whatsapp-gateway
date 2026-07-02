@@ -63,37 +63,38 @@ app.post('/api/connect', async (req, res) => {
         });
 
         if (!sock.authState.creds.registered) {
-            // AN ZAUNA LAFIYA: Sabar za ta jira sakan 10 dakat kafin ta tura code
-            setTimeout(async () => {
-                try {
-                    let code = await sock.requestPairingCode(cleanNumber);
-                    
-                    if (!code) {
-                        return res.status(500).json({ error: 'Sabar WhatsApp ba ta ba da code ba, sake gwada nan kusa.' });
-                    }
-
-                    // GYARA MAFI ANFANI: Mun bar duka alphabet da lambobin dakat kamar yadda WhatsApp ya turo
-                    let cleanCode = code.trim().toUpperCase().replace(/-/g, '');
-
-                    // Idan bai cika guda 8 ba, mu dan kara jiran sakan 2 don ya cika cif
-                    if (cleanCode.length < 8) {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        code = await sock.requestPairingCode(cleanNumber);
-                        cleanCode = code.trim().toUpperCase().replace(/-/g, '');
-                    }
-
-                    // Tsara shi ya fito hudu na farko da hudu na karshe (Misali: W67X - N2A3)
-                    let formattedCode = cleanCode.substring(0, 4) + " - " + cleanCode.substring(4, 8);
-
-                    if (!res.headersSent) {
-                        return res.json({ success: true, pairingCode: formattedCode });
-                    }
-                } catch (err) {
-                    if (!res.headersSent) {
-                        return res.status(500).json({ error: 'An samu matsala wajen samar da Pairing Code. Sake jarrabawa.' });
-                    }
+            // AN CIRE TIMEOUT: Muna nema kai tsaye domin kada shafin gaba ya makale
+            try {
+                // Dan dakata kadan don Baileys ya gama shiri
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                let code = await sock.requestPairingCode(cleanNumber);
+                
+                if (!code) {
+                    return res.status(500).json({ error: 'Sabar WhatsApp ba ta ba da code ba.' });
                 }
-            }, 10000); 
+
+                // Tabbatar an cire alamomin baka-gizo (-) kawai
+                let cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+                // Idan har yanzu code din bai cika guda 8 ba, mu sake nema dakat
+                if (cleanCode.length < 8) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    code = await sock.requestPairingCode(cleanNumber);
+                    cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                }
+
+                // Tsara shi hudu na farko da hudu na karshe
+                let formattedCode = cleanCode.substring(0, 4) + " - " + cleanCode.substring(4, 8);
+
+                if (!res.headersSent) {
+                    return res.json({ success: true, pairingCode: formattedCode });
+                }
+            } catch (err) {
+                if (!res.headersSent) {
+                    return res.status(500).json({ error: 'An samu matsala wajen samar da Pairing Code.' });
+                }
+            }
         } else {
             await WhatsAppNumber.findOneAndUpdate(
                 { phoneNumber: cleanNumber },
@@ -131,4 +132,4 @@ app.post('/api/send-message', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Inji yana tafi a port ${PORT}`));
-                          
+                                      
