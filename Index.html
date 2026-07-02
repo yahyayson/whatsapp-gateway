@@ -2,7 +2,6 @@
 <html lang="ha">
 <head>
     <meta charset="UTF-8">
-    <!-- AN GYARA: An hana allon yin zooming na banzan a waya (user-scalable=no) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WhatsApp Gateway - Gallery Screen</title>
     <style>
@@ -224,7 +223,6 @@
 <body>
 
     <div class="gallery-container">
-        <!-- LAYI NA 1 -->
         <div class="gallery-column scroll-up">
             <img src="https://picsum.photos/300/400?random=1">
             <img src="https://picsum.photos/300/400?random=2">
@@ -236,7 +234,6 @@
             <img src="https://picsum.photos/300/400?random=4">
         </div>
         
-        <!-- LAYI NA 2 (AN GYARA: An dawo da rukunin da ya bace) -->
         <div class="gallery-column scroll-up-delayed">
             <img src="https://picsum.photos/300/400?random=5">
             <img src="https://picsum.photos/300/400?random=6">
@@ -248,7 +245,6 @@
             <img src="https://picsum.photos/300/400?random=8">
         </div>
 
-        <!-- LAYI NA 3 -->
         <div class="gallery-column scroll-up">
             <img src="https://picsum.photos/300/400?random=9">
             <img src="https://picsum.photos/300/400?random=10">
@@ -282,7 +278,6 @@
                 <div id="spinner" class="spinner"></div> 
             </button>
 
-            <!-- Gurbin nuna Pairing Code idan an samo -->
             <div id="pairingDisplay" class="pairing-box">
                 <div id="codeValue" class="code-text">- - - - - - - -</div>
                 
@@ -292,7 +287,6 @@
                 <p style="margin: 8px 0 0 0; font-size: 11px; color: #8696a0;">Kwafi wannan code din ka saka a Linked Devices na WhatsApp dinka.</p>
             </div>
 
-            <!-- Wurin nuna sako idan lamba riga tana Connected -->
             <div id="statusDisplay" class="status-box"></div>
         </div>
     </div>
@@ -360,13 +354,19 @@
             btnText.innerText = "Ana lissafawa...";
             spinner.style.display = 'block';
 
+            // TSARIN ABORTCONTROLLER NA MUSAMMAN DOMIN TSAYAR DA MAKALUWAR SERVER LOKACIN DA TA DAUKO SAKAN 10
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // Idan ya kai sakan 15, zai katse ya nuna sakamakon dakat
+
             try {
                 const response = await fetch(`${API_URL}/api/connect`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: fullPhoneNumber })
+                    body: JSON.stringify({ phoneNumber: fullPhoneNumber }),
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 const data = await response.json();
 
                 if(data.success) {
@@ -382,7 +382,11 @@
                     alert('Matsala: ' + (data.error || 'Ba a sami damar haɗawa ba'));
                 }
             } catch (error) {
-                alert('An samu matsalar sadarwa da server.');
+                if (error.name === 'AbortError') {
+                    alert('Sabar ta ɗauki lokaci, don Allah duba WhatsApp dinka ko ka sake gwadawa yanzu.');
+                } else {
+                    alert('An samu matsalar sadarwa da server.');
+                }
             } finally {
                 btnAction.disabled = false;
                 btnText.innerText = "HAƊA YANZU";
@@ -412,4 +416,5 @@
         }
     </script>
 </body>
-</html>
+  </html>
+  
