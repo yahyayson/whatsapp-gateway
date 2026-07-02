@@ -354,9 +354,9 @@
             btnText.innerText = "Ana lissafawa...";
             spinner.style.display = 'block';
 
-            // TSARIN ABORTCONTROLLER NA MUSAMMAN DOMIN TSAYAR DA MAKALUWAR SERVER LOKACIN DA TA DAUKO SAKAN 10
+            // GYARA: An daga lokacin jiran AbortController zuwa sakan 25 don server ta huta fes
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // Idan ya kai sakan 15, zai katse ya nuna sakamakon dakat
+            const timeoutId = setTimeout(() => controller.abort(), 25000); 
 
             try {
                 const response = await fetch(`${API_URL}/api/connect`, {
@@ -383,7 +383,7 @@
                 }
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    alert('Sabar ta ɗauki lokaci, don Allah duba WhatsApp dinka ko ka sake gwadawa yanzu.');
+                    alert('Sabar ta ɗauki lokaci kadan wajen jiran code, sake danna maballin yanzu dakat.');
                 } else {
                     alert('An samu matsalar sadarwa da server.');
                 }
@@ -416,5 +416,4 @@
         }
     </script>
 </body>
-  </html>
-  
+</html>
