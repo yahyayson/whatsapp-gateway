@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.static(__dirname));
 
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/whatsapp_gateway')
-  .then(() => console.log('Masha Allah, MongoDB ya haɗu lafiya!'))
+  .then(() => console.log('MongoDB ya haɗu lafiya!'))
   .catch(err => console.error('Kuskure wajen haɗawa da MongoDB:', err));
 
 const NumberSchema = new mongoose.Schema({
@@ -22,8 +22,19 @@ const NumberSchema = new mongoose.Schema({
 });
 const WhatsAppNumber = mongoose.model('WhatsAppNumber', NumberSchema);
 
+// GYARA AKAN 'Index.html' MAI BABBAN BAKI:
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    const rootIndexUpper = path.join(__dirname, 'Index.html');
+    const rootIndexLower = path.join(__dirname, 'index.html');
+    const fs = require('fs');
+
+    if (fs.existsSync(rootIndexUpper)) {
+        return res.sendFile(rootIndexUpper);
+    } else if (fs.existsSync(rootIndexLower)) {
+        return res.sendFile(rootIndexLower);
+    } else {
+        res.status(404).send('Inji yana aiki, amma an gaza samun fayil din Index.html a GitHub dinka!');
+    }
 });
 
 let sessions = {}; 
@@ -53,7 +64,6 @@ app.post('/api/connect', async (req, res) => {
             const { connection } = update;
             if (connection === 'open') {
                 console.log(`Lamba ${cleanNumber} ta haɗu dakat!`);
-                
                 await WhatsAppNumber.findOneAndUpdate(
                     { phoneNumber: cleanNumber },
                     { status: 'Active', connectedAt: new Date() },
@@ -63,37 +73,35 @@ app.post('/api/connect', async (req, res) => {
         });
 
         if (!sock.authState.creds.registered) {
-            // AN ZAUNA LAFIYA: Sabar za ta jira sakan 10 dakat kafin ta tura code
-            setTimeout(async () => {
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            let cleanCode = "";
+            let attempts = 0;
+
+            while (cleanCode.length < 8 && attempts < 5) {
                 try {
                     let code = await sock.requestPairingCode(cleanNumber);
-                    
-                    if (!code) {
-                        return res.status(500).json({ error: 'Sabar WhatsApp ba ta ba da code ba, sake gwada nan kusa.' });
+                    if (code) {
+                        cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
                     }
-
-                    // GYARA MAFI ANFANI: Mun bar duka alphabet da lambobin dakat kamar yadda WhatsApp ya turo
-                    let cleanCode = code.trim().toUpperCase().replace(/-/g, '');
-
-                    // Idan bai cika guda 8 ba, mu dan kara jiran sakan 2 don ya cika cif
-                    if (cleanCode.length < 8) {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        code = await sock.requestPairingCode(cleanNumber);
-                        cleanCode = code.trim().toUpperCase().replace(/-/g, '');
-                    }
-
-                    // Tsara shi ya fito hudu na farko da hudu na karshe (Misali: W67X - N2A3)
-                    let formattedCode = cleanCode.substring(0, 4) + " - " + cleanCode.substring(4, 8);
-
-                    if (!res.headersSent) {
-                        return res.json({ success: true, pairingCode: formattedCode });
-                    }
-                } catch (err) {
-                    if (!res.headersSent) {
-                        return res.status(500).json({ error: 'An samu matsala wajen samar da Pairing Code. Sake jarrabawa.' });
-                    }
+                } catch (e) {
+                    console.log("Ana sake gwadawa...");
                 }
-            }, 10000); 
+                if (cleanCode.length < 8) {
+                    attempts++;
+                    await new Promise(resolve => setTimeout(resolve, 2500)); 
+                }
+            }
+
+            if (cleanCode.length < 8) {
+                return res.status(500).json({ error: 'Gaza samun cikakken code daga WhatsApp. Sake gwada yanzu.' });
+            }
+
+            let formattedCode = cleanCode.substring(0, 4) + " - " + cleanCode.substring(4, 8);
+
+            if (!res.headersSent) {
+                return res.json({ success: true, pairingCode: formattedCode });
+            }
         } else {
             await WhatsAppNumber.findOneAndUpdate(
                 { phoneNumber: cleanNumber },
@@ -131,4 +139,3 @@ app.post('/api/send-message', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Inji yana tafi a port ${PORT}`));
-                  
